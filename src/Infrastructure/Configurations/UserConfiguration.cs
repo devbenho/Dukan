@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
 using Domain.ValueObjects;
 
-namespace Infrastructure.Configurations
+namespace Infrastructure.Data.Confi
 {
     public class UserConfiguration : IEntityTypeConfiguration<User>
     {
