@@ -32,7 +32,6 @@ public sealed class CreateUserCommandHandler : ICommandHandler<CreateUserCommand
       if (!await _userRepository.ExistsByEmailAsync(emailResult.Value, cancellationToken))
          return Result.Failure<Guid>(DomainErrors.User.EmailAlreadyInUse);
 
-      Console.WriteLine(passwordResult.Value);
 
       var user = User.Create(Guid.NewGuid(),firstNameResult.Value, lastNameResult.Value, emailResult.Value, usernameResult.Value, passwordResult.Value, phoneNumberResult.Value, request.IsAdmin, request.IsSuperAdmin, request.IsActive, null);
       user.Addresses = request.Addresses;
