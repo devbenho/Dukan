@@ -1,25 +1,34 @@
 using Domain.Entities;
 using Domain.Repositories;
 using Domain.ValueObjects;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Infrastructure.Repositories;
 
-public class UserRepository(ApplicationDbContext dbContext) : IUserRepository
+public class UserRepository : IUserRepository
 {
-    public Task Add(User user)
+    
+    private readonly ApplicationDbContext dbContext;
+
+    public UserRepository(ApplicationDbContext dbContext)
     {
-        dbContext.Add(user);
-        return Task.CompletedTask;
+        this.dbContext = dbContext;
+    }
+    
+    // use dotnet core identity to manage users
+    public async Task Add(User user)
+    {
+        var result = await dbContext.Users.AddAsync(user);
+        
     }
 
-    public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
-        => await dbContext.FindAsync<User>(email, cancellationToken);
-    
+    public async Task<User?> GetByEmailAsync(Email email, CancellationToken cancellationToken = default)
+        => await dbContext.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
 
     public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-        => await dbContext.FindAsync<User>(id, cancellationToken);
+        => await dbContext.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
     
 
     public async Task<EntityEntry<User>> AddAsync(User user, CancellationToken cancellationToken = default)

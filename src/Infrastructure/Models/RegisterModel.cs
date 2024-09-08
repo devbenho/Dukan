@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Infrastructure.Models;
 
@@ -18,4 +19,18 @@ public abstract class RegisterModel
 
     [Required, StringLength(256)] 
     public string Password { get; set; } = "";
+
+    // Parameterless constructor
+    public RegisterModel() { }
+
+    // Parameterized constructor
+    [JsonConstructor]
+    public RegisterModel(string firstName, string lastName, string username, string email, string password)
+    {
+        FirstName = firstName;
+        LastName = lastName;
+        Username = username;
+        Email = email;
+        Password = password;
+    }
 }

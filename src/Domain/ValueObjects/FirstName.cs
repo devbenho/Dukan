@@ -6,10 +6,7 @@ public sealed class FirstName : ValueObject
 {
     public const int MaxLength = 50;
 
-    private FirstName(string value)
-    {
-        Value = value;
-    }
+    private FirstName(string value) => Value = value;
 
     private FirstName()
     {

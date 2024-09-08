@@ -7,10 +7,15 @@ using Infrastructure.Interceptors;
 using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using MediatR;
+using Microsoft.AspNetCore.Identity;
 using Quartz;
 using Scrutor;
-
+using Application.Common.Interfaces;
+using Infrastructure.Identity;
 var builder = WebApplication.CreateBuilder(args);
+var connectionString = builder.Configuration.GetConnectionString("WebIdentityDbContextConnection") ?? throw new InvalidOperationException("Connection string 'WebIdentityDbContextConnection' not found.");
+
+
 
 // Configure services
 ConfigureServices(builder.Services, builder.Configuration);
@@ -37,6 +42,7 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
     services.AddScoped<IUserRepository, UserRepository>();
     services.AddScoped<IUnitOfWork, UnitOfWork>();
+    services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddQuartz(configure =>
     {
         var jobKey = new JobKey(nameof(ProcessOutboxMessagesJob));
@@ -79,6 +85,10 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     var connectionString = configuration.GetConnectionString("Database");
     services.AddDbContext<ApplicationDbContext>(
         options => options.UseSqlServer(connectionString));
+    
+    // Add identity services
+    services.AddIdentity<IdentityUser, IdentityRole>()
+        .AddEntityFrameworkStores<ApplicationDbContext>();
 
     services
         .AddControllers()
@@ -86,11 +96,17 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
     // Add MediatR services
     services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Application.AssemblyReference.Assembly));
+    services.AddAutoMapper(Application.AssemblyReference.Assembly);
+    services.AddRazorPages();
+    services.AddAuthentication();
+    services.AddAuthorization();
+    services.AddHttpContextAccessor();
+    // map IAuthService to AuthService
 }
 void EnsureDatabaseConnection(IHost app)
 {
     using var scope = app.Services.CreateScope();
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var dbContext = scope.ServiceProvider.GetRequiredService<Infrastructure.ApplicationDbContext>();
     try
     {
         dbContext.Database.CanConnect();
@@ -115,4 +131,5 @@ void ConfigurePipeline(WebApplication app)
     app.UseRouting();
     app.UseAuthorization();
     app.MapControllers();
+    app.MapRazorPages();
 }

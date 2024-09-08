@@ -1,4 +1,5 @@
 using Application.Common.Interfaces;
+using Domain.Shared;
 using Domain.ValueObjects;
 
 namespace Application.Users;
@@ -15,4 +16,6 @@ public record CreateUserCommand(
     bool IsActive,
     ICollection<Address> Addresses,
     ICollection<UserRole> Roles
-    ) : ICommand<Guid> {}
+    ) : ICommand<Guid>
+{}
+    

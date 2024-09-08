@@ -16,13 +16,31 @@ public sealed class UsersController(ISender sender) : ApiController(sender)
         [FromBody] RegisterUserRequest request,
         CancellationToken cancellationToken)
     {
-        var command = new CreateUserCommand(request.Email, request.FirstName, request.LastName, request.Username, request.Password, request.PhoneNumber, request.IsAdmin, request.IsSuperAdmin, request.IsActive, request.Addresses, request.Roles);
-        Result<Guid> result = await Sender.Send(command, cancellationToken);
-        if (!result.IsSuccess)
+        if (!ModelState.IsValid)
         {
-            return BadRequest(result.Error);
+            return BadRequest(ModelState);
         }
 
-        return Ok(result.Value); 
+        var command = new CreateUserCommand(
+            request.Email,
+            request.FirstName,
+            request.LastName,
+            request.Username,
+            request.Password,
+            request.PhoneNumber,
+            request.IsAdmin,
+            request.IsSuperAdmin,
+            request.IsActive,
+            request.Addresses,
+            request.Roles
+        );
+
+        var result = await Sender.Send(command, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return BadRequest(result?.Error);
+        }
+
+        return Ok(result.Value);
     }
 }
