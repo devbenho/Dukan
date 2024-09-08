@@ -46,8 +46,9 @@ public class AuthService : IAuthService
         throw new NotImplementedException();
     }
 
-    Task IAuthService.GetUserAsync(string email)
+    async Task<bool> IAuthService.GetUserAsync(Email email)
     {
-        throw new NotImplementedException();
+        var user = await _userManager.FindByEmailAsync(email.Value);
+        return user != null;
     }
 }

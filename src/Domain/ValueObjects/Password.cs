@@ -19,21 +19,21 @@ namespace Domain.ValueObjects
                 .Ensure(
                     p => !string.IsNullOrWhiteSpace(p),
                     DomainErrors.Password.Empty)
-                .Ensure(
-                    p => p.Length >= MinLength,
-                    DomainErrors.Password.TooShort)
-                .Ensure(
-                    p => p.Any(char.IsUpper),
-                    DomainErrors.Password.MissingUppercase)
-                .Ensure(
-                    p => p.Any(char.IsLower),
-                    DomainErrors.Password.MissingLowercase)
-                .Ensure(
-                    p => p.Any(char.IsDigit),
-                    DomainErrors.Password.MissingDigit)
-                .Ensure(
-                    p => p.Any(char.IsSymbol) || p.Any(char.IsPunctuation),
-                    DomainErrors.Password.MissingSpecialCharacter)
+                // .Ensure(
+                //     p => p.Length >= MinLength,
+                //     DomainErrors.Password.TooShort)
+                // .Ensure(
+                //     p => p.Any(char.IsUpper),
+                //     DomainErrors.Password.MissingUppercase)
+                // .Ensure(
+                //     p => p.Any(char.IsLower),
+                //     DomainErrors.Password.MissingLowercase)
+                // .Ensure(
+                //     p => p.Any(char.IsDigit),
+                //     DomainErrors.Password.MissingDigit)
+                // .Ensure(
+                //     p => p.Any(char.IsSymbol) || p.Any(char.IsPunctuation),
+                //     DomainErrors.Password.MissingSpecialCharacter)
                 .Map(p => new Password(p));
 
         protected override IEnumerable<object> GetAtomicValues()

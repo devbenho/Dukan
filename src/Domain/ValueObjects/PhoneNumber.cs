@@ -16,10 +16,10 @@ namespace Domain.ValueObjects
                 .Ensure(
                     p => !string.IsNullOrWhiteSpace(p),
                     DomainErrors.PhoneNumber.Empty)
-                .Ensure(
-                    p => p.Length >= MinLength ,
-                    DomainErrors.PhoneNumber.TooLong)
-                .Ensure(p=> p.Length <= 15, DomainErrors.PhoneNumber.TooShort)
+                // .Ensure(
+                //     p => p.Length >= MinLength ,
+                //     DomainErrors.PhoneNumber.TooLong)
+                // .Ensure(p=> p.Length <= 15, DomainErrors.PhoneNumber.TooShort)
                 .Map(p => new PhoneNumber(p));
 
         protected override IEnumerable<object> GetAtomicValues()
