@@ -70,6 +70,9 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     services.AddSingleton<UpdateAuditableEntitiesInterceptor>();
     services.AddValidatorsFromAssembly(Application.AssemblyReference.Assembly, includeInternalTypes: true);
 
+    services.AddHealthChecks()
+        .AddDbContextCheck<ApplicationDbContext>();
+
     // Register application db context
     services.AddDbContext<ApplicationDbContext>(
         (sp,options) =>
@@ -80,7 +83,7 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
             sp.GetRequiredService<UpdateAuditableEntitiesInterceptor>());
 
     });
-    
+
 
     var connectionString = configuration.GetConnectionString("Database");
     services.AddDbContext<ApplicationDbContext>(
@@ -125,8 +128,10 @@ void ConfigurePipeline(WebApplication app)
     {
         app.UseSwagger();
         app.UseSwaggerUI();
+        app.Map("/", () => Results.Redirect("/swagger"));
     }
-
+    app.UseHealthChecks("/health");
+    // redii
     app.UseHttpsRedirection();
     app.UseRouting();
     app.UseAuthorization();
