@@ -1,51 +1,56 @@
 ﻿using Domain.Shared;
-using Infrastructure;
+using Infrastructure.Identity.AuthEvents;
 using Infrastructure.Outbox;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Quartz;
 
+// Add this using directive
+
+namespace Infrastructure.BackgroundJobs;
 
 [DisallowConcurrentExecution]
-public class ProcessOutboxMessagesJob : IJob
+public class ProcessOutboxMessagesJob(ApplicationDbContext dbContext, IPublisher publisher) : IJob
 {
-    private readonly ApplicationDbContext _dbContext;
-    private readonly IPublisher _publisher;
-
-    public ProcessOutboxMessagesJob(ApplicationDbContext dbContext, IPublisher publisher)
-    {
-        _dbContext = dbContext;
-        _publisher = publisher;
-    }
-
     public async Task Execute(IJobExecutionContext context)
     {
-        List<OutboxMessage> messages = await _dbContext
+        var messages = await dbContext
             .Set<OutboxMessage>()
             .Where(m => m.ProcessedOnUtc == null)
             .Take(20)
             .ToListAsync(context.CancellationToken);
-        foreach (OutboxMessage outboxMessage in messages)
-        {
-            IDomainEvent? domainEvent = JsonConvert
-                .DeserializeObject<IDomainEvent>(
-                    outboxMessage.Content,
-                    new JsonSerializerSettings
-                    {
-                        TypeNameHandling = TypeNameHandling.All
-                    });
 
-            if (domainEvent is null)
+        foreach (var outboxMessage in messages)
+        {
+            // Deserialize to AuthEventBase first
+            var authEvent = DeserializeEvent<IAuthEventBase>(outboxMessage.Content);
+            if (authEvent != null)
             {
-                continue;
+                await publisher.Publish(authEvent, context.CancellationToken);
+                outboxMessage.ProcessedOnUtc = DateTime.UtcNow;
+                continue; // Skip to the next message
             }
 
-            await _publisher.Publish(domainEvent, context.CancellationToken);
-
-            outboxMessage.ProcessedOnUtc = DateTime.UtcNow;
-            
+            // If not an AuthEventBase, try to deserialize as IDomainEvent
+            var domainEvent = DeserializeEvent<IDomainEvent>(outboxMessage.Content);
+            if (domainEvent != null)
+            {
+                await publisher.Publish(domainEvent, context.CancellationToken);
+                outboxMessage.ProcessedOnUtc = DateTime.UtcNow;
+            }
         }
-        await _dbContext.SaveChangesAsync();
+
+        await dbContext.SaveChangesAsync();
+    }
+
+    private T? DeserializeEvent<T>(string content)
+    {
+        return JsonConvert.DeserializeObject<T>(
+            content,
+            new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.All
+            });
     }
 }

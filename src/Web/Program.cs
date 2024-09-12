@@ -11,7 +11,10 @@ using Microsoft.AspNetCore.Identity;
 using Quartz;
 using Scrutor;
 using Application.Common.Interfaces;
+using Infrastructure.BackgroundJobs;
 using Infrastructure.Identity;
+using Infrastructure.Identity.AuthEvents;
+
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("WebIdentityDbContextConnection") ?? throw new InvalidOperationException("Connection string 'WebIdentityDbContextConnection' not found.");
 
@@ -92,6 +95,11 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     // Add identity services
     services.AddIdentity<IdentityUser, IdentityRole>()
         .AddEntityFrameworkStores<ApplicationDbContext>();
+        
+    services.AddIdentityCore<ApplicationUser>()
+        .AddRoles<IdentityRole>()
+        .AddEntityFrameworkStores<ApplicationDbContext>()
+        .AddDefaultTokenProviders();
 
     services
         .AddControllers()
@@ -99,6 +107,10 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
     // Add MediatR services
     services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Application.AssemblyReference.Assembly));
+    services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(
+        Application.AssemblyReference.Assembly,
+        typeof(UserRegisteredSuccessfullyEventHandler).Assembly
+    ));
     services.AddAutoMapper(Application.AssemblyReference.Assembly);
     services.AddRazorPages();
     services.AddAuthentication();

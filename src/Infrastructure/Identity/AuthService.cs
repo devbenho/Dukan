@@ -1,6 +1,8 @@
 using Application.Common.Interfaces;
 using Application.Users;
+using Domain.Repositories;
 using Domain.ValueObjects;
+using Infrastructure.Identity.AuthEvents;
 using Microsoft.AspNetCore.Identity;
 namespace Infrastructure.Identity;
 
@@ -8,18 +10,19 @@ public class AuthService : IAuthService
 {
     private readonly UserManager<IdentityUser> _userManager;
     private readonly SignInManager<IdentityUser> _signInManager;
-
-    public AuthService(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager)
+    private readonly IUnitOfWork _unitOfWork;
+    public AuthService(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, IUnitOfWork unitOfWork)
     {
         _userManager = userManager;
         _signInManager = signInManager;
+        _unitOfWork = unitOfWork;
     }
-
+    
 
     public async Task<Guid> RegisterAsync(Email email, Password password, FirstName firstName, LastName lastName, Username username,
         PhoneNumber phoneNumber)
     {
-        Console.WriteLine("Registering user");
+        
         var user = new ApplicationUser
         {
             Email = email.Value,
@@ -29,14 +32,14 @@ public class AuthService : IAuthService
             PhoneNumber = phoneNumber.Value
         };
         var passwordHash = new PasswordHasher<ApplicationUser>().HashPassword(user, password.Value);
-        Console.WriteLine("User is " + user + passwordHash);
         var createdUser = await this._userManager.CreateAsync(user, passwordHash);
-        Console.WriteLine("Created user is " + createdUser);
         if (!createdUser.Succeeded)
         {
             throw new Exception(createdUser.Errors.First().Description);
         }
 
+        await user.RaiseAuthEvent(new UserRegisteredSuccessfullyEvent(new Guid(), userId: Guid.Parse(user.Id)));
+        await _unitOfWork.SaveChangesAsync();
         return Guid.Parse(user.Id);
 
     }
